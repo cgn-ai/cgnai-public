@@ -1,0 +1,26 @@
+#! /bin/bash
+
+trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
+
+ngrok http --log false 8888 > /dev/null 2>&1 & GROK_PID=$!
+jupyter lab --collaborative > /dev/null 2>&1 & JPT_PID=$!
+
+echo -e \\n\\tNeed to kill processes by hand\? Run \"kill $GROK_PID $JPT_PID\".
+echo -e \\tGive me a sec, 3 actually, to set everything up ...
+sleep 3
+
+# Get the link to the shared jupyter lab
+g=$(curl  http://localhost:4040/api/tunnels 2> /dev/null)
+nbserver=$(ls -1t `jupyter --runtime-dir`/*.json | head -n 1)
+
+url=`echo $g | jq -r .tunnels[-1].public_url`
+tok=`cat $nbserver | jq -r .token`
+link=$url?token=$tok
+
+# Copy the link to the clipboard
+if [ "$(command -v pbcopy)" != "" ]; then 
+	echo $link | pbcopy
+fi
+
+echo -e \\n\\tShared lab link:\\n\\t\\t$link\\n
+read -p "Press any key to exit... " -n1 -s
