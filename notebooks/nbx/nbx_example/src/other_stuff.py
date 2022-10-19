@@ -1,1 +1,0 @@
-INFO = "Something cool..."
